@@ -11,6 +11,10 @@ const FfMpegProcess_1 = require("./FfMpegProcess");
 const NestStreamer_1 = require("./NestStreamer");
 const HksvStreamer_1 = __importDefault(require("./HksvStreamer"));
 const pick_port_1 = __importDefault(require("pick-port"));
+// H.264 is codec type 0 in both HAP-NodeJS generations. Keeping the value
+// local avoids a runtime dependency on the retired `hap-nodejs` package while
+// remaining compatible with Homebridge 1 and 2.
+const H264_VIDEO_CODEC_TYPE = 0;
 class StreamingDelegate {
     constructor(log, api, platform, camera, accessory) {
         // keep track of sessions
@@ -60,7 +64,7 @@ class StreamingDelegate {
                         fragmentLength: 4000,
                     },
                     video: {
-                        type: 0 /* VideoCodecType.H264 */,
+                        type: H264_VIDEO_CODEC_TYPE,
                         parameters: {
                             profiles: [2 /* H264Profile.HIGH */],
                             levels: [2 /* H264Level.LEVEL4_0 */],
@@ -169,8 +173,11 @@ class StreamingDelegate {
             audioSRTP: Buffer.concat([request.audio.srtp_key, request.audio.srtp_salt]),
             audioSSRC: audioSSRC
         };
+        // Homebridge 1 reads `address`; Homebridge 2 renamed it to
+        // `addressOverride`. Include both so one build works with either runtime.
         const response = {
             address: currentAddress,
+            addressOverride: currentAddress,
             video: {
                 port: videoReturnPort,
                 ssrc: videoSSRC,
@@ -366,7 +373,7 @@ class StreamingDelegate {
          */
         const STOP_AFTER_MOTION_STOP = false;
         this.handlingRecordingStreamingRequest = true;
-        if (this.cameraRecordingConfiguration.videoCodec.type !== 0 /* VideoCodecType.H264 */)
+        if (this.cameraRecordingConfiguration.videoCodec.type !== H264_VIDEO_CODEC_TYPE)
             throw new Error('Unsupported recording codec type.');
         const profile = this.cameraRecordingConfiguration.videoCodec.parameters.profile === 2 /* H264Profile.HIGH */ ? "high"
             : this.cameraRecordingConfiguration.videoCodec.parameters.profile === 1 /* H264Profile.MAIN */ ? "main" : "baseline";

@@ -11,6 +11,7 @@ import {Doorbell} from "./Doorbell";
 import {Thermostat} from "./Thermostat";
 import {UnknownDevice} from "./UnknownDevice";
 import {Display} from "./Display";
+import {createPubSubAuth} from './PubSubAuth';
 
 export class SmartDeviceManagement {
     private oauth2Client: google.Auth.OAuth2Client;
@@ -41,16 +42,7 @@ export class SmartDeviceManagement {
             this.pubSubClient = new pubsub.PubSub({
                 //use GCP project ID if it's present
                 projectId: config.gcpProjectId || config.projectId,
-                credentials: {
-                    // @ts-ignore
-                    type: 'authorized_user',
-                    // @ts-ignore
-                    client_id: config.clientId,
-                    // @ts-ignore
-                    client_secret: config.clientSecret,
-                    // @ts-ignore
-                    refresh_token: config.refreshToken
-                }
+                auth: createPubSubAuth(config)
             });
             this.subscription = this.pubSubClient.subscription(config.subscriptionId);
             this.subscription.on('message', message => {

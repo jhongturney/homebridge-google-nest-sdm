@@ -46,6 +46,7 @@ const Doorbell_1 = require("./Doorbell");
 const Thermostat_1 = require("./Thermostat");
 const UnknownDevice_1 = require("./UnknownDevice");
 const Display_1 = require("./Display");
+const PubSubAuth_1 = require("./PubSubAuth");
 class SmartDeviceManagement {
     constructor(config, log) {
         this.subscribed = true;
@@ -62,16 +63,7 @@ class SmartDeviceManagement {
             this.pubSubClient = new pubsub.PubSub({
                 //use GCP project ID if it's present
                 projectId: config.gcpProjectId || config.projectId,
-                credentials: {
-                    // @ts-ignore
-                    type: 'authorized_user',
-                    // @ts-ignore
-                    client_id: config.clientId,
-                    // @ts-ignore
-                    client_secret: config.clientSecret,
-                    // @ts-ignore
-                    refresh_token: config.refreshToken
-                }
+                auth: (0, PubSubAuth_1.createPubSubAuth)(config)
             });
             this.subscription = this.pubSubClient.subscription(config.subscriptionId);
             this.subscription.on('message', message => {

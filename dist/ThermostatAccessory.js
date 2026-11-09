@@ -286,7 +286,7 @@ class ThermostatAccessory extends Accessory_1.Accessory {
                 mode = Traits.ThermostatModeType.HEATCOOL;
                 break;
         }
-        await this.device.setMode(mode);
+        await this.writeDevice(() => this.device.setMode(mode));
     }
     /**
      * Handle requests to get the current value of the "Current Temperature" characteristic
@@ -316,7 +316,7 @@ class ThermostatAccessory extends Accessory_1.Accessory {
         this.log.debug('Triggered SET TargetTemperature:' + value, this.accessory.displayName);
         if (!lodash_1.default.isNumber(value))
             throw new Error(`Cannot set "${value}" as temperature.`);
-        await this.device.setTargetTemperature(value);
+        await this.writeDevice(() => this.device.setTargetTemperature(value));
     }
     /**
      * Handle requests to get the current value of the "Cooling Threshold Temperature" characteristic
@@ -342,7 +342,7 @@ class ThermostatAccessory extends Accessory_1.Accessory {
         this.log.debug('Triggered SET CoolingThresholdTemperature:' + value, this.accessory.displayName);
         if (!lodash_1.default.isNumber(value))
             throw new Error(`Cannot set "${value}" as cooling threshold temperature.`);
-        await this.device.setTargetTemperatureRange(value, undefined);
+        await this.writeDevice(() => this.device.setTargetTemperatureRange(value, undefined));
     }
     /**
      * Handle requests to get the current value of the "Heating Threshold Temperature" characteristic
@@ -368,7 +368,7 @@ class ThermostatAccessory extends Accessory_1.Accessory {
         this.log.debug('Triggered SET HeatingThresholdTemperatureSet:' + value, this.accessory.displayName);
         if (!lodash_1.default.isNumber(value))
             throw new Error(`Cannot set "${value}" as heating threshold temperature.`);
-        await this.device.setTargetTemperatureRange(undefined, value);
+        await this.writeDevice(() => this.device.setTargetTemperatureRange(undefined, value));
     }
     /**
      * Handle requests to get the current value of the "Temperature Display Units" characteristic
@@ -389,7 +389,7 @@ class ThermostatAccessory extends Accessory_1.Accessory {
      */
     async handleEcoModeSet(value) {
         this.log.debug('Triggered SET EcoMode:' + value, this.accessory.displayName);
-        await this.device.setEco(value ? Traits_1.EcoModeType.MANUAL_ECO : Traits_1.EcoModeType.OFF);
+        await this.writeDevice(() => this.device.setEco(value ? Traits_1.EcoModeType.MANUAL_ECO : Traits_1.EcoModeType.OFF));
     }
 }
 exports.ThermostatAccessory = ThermostatAccessory;

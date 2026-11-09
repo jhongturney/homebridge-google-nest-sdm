@@ -55,7 +55,7 @@ export class FanAccessory extends Accessory<Thermostat> {
         if (this.config.fanDuration && (this.config.fanDuration < 1 || this.config.fanDuration > 43200))
             throw new Error(`Cannot set "${this.config.fanDuration}" as fan duration.`);
 
-        await this.device.setFan((value as boolean) ? Traits.FanTimerModeType.ON : FanTimerModeType.OFF, this.config.fanDuration)
+        await this.writeDevice(() => this.device.setFan((value as boolean) ? Traits.FanTimerModeType.ON : Traits.FanTimerModeType.OFF, this.config.fanDuration));
     }
 
     /**

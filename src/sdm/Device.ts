@@ -11,6 +11,8 @@ export abstract class Device {
     protected displayName: string|null|undefined;
     protected log: Logger;
     protected commandErrorsAreFatal = false;
+    private commandTimes: number[] = [];
+    private commandCooldownUntil = 0;
     private refreshPromise?: Promise<void>;
     private lastRefreshAttempt = 0;
     constructor(smartdevicemanagement: google.smartdevicemanagement_v1.Smartdevicemanagement,
@@ -78,6 +80,17 @@ export abstract class Device {
     }
 
     async executeCommand<T extends {[key: string]: any} | null, U>(name: string, params?: T): Promise<U | undefined> {
+        if (this.commandErrorsAreFatal) {
+            const now = Date.now();
+            this.commandTimes = this.commandTimes.filter(time => now - time < 3600000);
+            const recent = this.commandTimes.filter(time => now - time < 60000);
+            const nextAllowed = Math.max(this.commandCooldownUntil,
+                recent.length >= 5 ? recent[recent.length - 5] + 60000 : 0,
+                this.commandTimes.length >= 100 ? this.commandTimes[0] + 3600000 : 0);
+            if (now < nextAllowed)
+                throw new Error(`Thermostat command rate limit: wait ${Math.ceil((nextAllowed - now) / 1000)} seconds before retrying.`);
+            this.commandTimes.push(now);
+        }
         this.log.debug(`Executing command ${name} with parameters ${JSON.stringify(params)}`, this.getDisplayName());
         try {
             const response = await this.smartdevicemanagement.enterprises.devices.executeCommand({
@@ -91,7 +104,8 @@ export abstract class Device {
             return <U>response.data.results;
         } catch (error: any) {
             if (isRateLimited(error)) {
-                this.log.error(`Google rate-limited the ${name} command (HTTP 429). Too many camera commands in a short period — wait about a minute before retrying.`, this.getDisplayName());
+                if (this.commandErrorsAreFatal) this.commandCooldownUntil = Date.now() + 60000;
+                this.log.warn(`Google rate-limited the ${name} command (HTTP 429). Pause device commands for at least a minute; an hourly quota can take longer to clear.`, this.getDisplayName());
             } else {
                 this.log.error(`Could not execute device command: ${describeApiError(error)}`, this.getDisplayName());
             }

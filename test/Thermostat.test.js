@@ -21,16 +21,66 @@ function fixture(mode = 'HEATCOOL', execute = async () => ({data: {}})) {
     return {device: new Thermostat(api, state, log), calls, api, state, log};
 }
 
-test('concurrent mixed-mode threshold changes preserve both accepted values', async () => {
+test('concurrent mixed-mode threshold changes combine into one command preserving both values', async () => {
     const {device, calls} = fixture();
     await Promise.all([
         device.setTargetTemperatureRange(undefined, 20),
         device.setTargetTemperatureRange(27, undefined)
     ]);
     assert.deepEqual(calls, [
-        {command: Commands.ThermostatTemperatureSetpoint_SetRange, params: {heatCelsius: 20, coolCelsius: 25}},
         {command: Commands.ThermostatTemperatureSetpoint_SetRange, params: {heatCelsius: 20, coolCelsius: 27}}
     ]);
+});
+
+test('rapid slider writes send only the latest heating and cooling values', async () => {
+    const {device, calls} = fixture();
+    await Promise.all([
+        device.setTargetTemperatureRange(undefined, 19),
+        device.setTargetTemperatureRange(26),
+        device.setTargetTemperatureRange(undefined, 20),
+        device.setTargetTemperatureRange(27)
+    ]);
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0].params, {heatCelsius: 20, coolCelsius: 27});
+});
+
+test('thermostat command budget includes fan/mode/range requests and reopens after a minute', async t => {
+    let now = 10000000;
+    t.mock.method(Date, 'now', () => now);
+    const {device, calls} = fixture();
+    for (let i = 0; i < 5; i++) await device.executeCommand(i % 2 ? 'fan' : 'range');
+    await assert.rejects(device.executeCommand('mode'), /wait 60 seconds/);
+    assert.equal(calls.length, 5);
+    now += 60000;
+    await device.executeCommand('mode');
+    assert.equal(calls.length, 6);
+});
+
+test('thermostat hourly command budget cannot be bypassed by spacing minute bursts', async t => {
+    let now = 10000000;
+    t.mock.method(Date, 'now', () => now);
+    const {device, calls} = fixture();
+    for (let minute = 0; minute < 20; minute++) {
+        for (let i = 0; i < 5; i++) await device.executeCommand('test');
+        now += 60000;
+    }
+    await assert.rejects(device.executeCommand('test'), /rate limit/);
+    assert.equal(calls.length, 100);
+});
+
+test('Google 429 activates cooldown without sending repeated requests', async t => {
+    let now = 10000000;
+    t.mock.method(Date, 'now', () => now);
+    const {device, calls} = fixture('HEATCOOL', async () => {
+        if (calls.length === 1) throw {response: {status: 429}};
+        return {data: {}};
+    });
+    await assert.rejects(device.executeCommand('range'), /429/);
+    await assert.rejects(device.executeCommand('fan'), /wait 60 seconds/);
+    assert.equal(calls.length, 1);
+    now += 60000;
+    await device.executeCommand('range');
+    assert.equal(calls.length, 2);
 });
 
 test('a rejected mixed-mode command leaves cache intact and does not poison the queue', async () => {
@@ -102,6 +152,14 @@ test('nullable conversion preserves zero and false', async () => {
     for (const value of [0, false, 20])
         assert.equal(await Accessory.prototype.convertToNullable(Promise.resolve(value)), value);
     assert.equal(await Accessory.prototype.convertToNullable(Promise.resolve(undefined)), null);
+});
+
+test('device writes report expected HomeKit failures instead of unhandled write errors', async () => {
+    class HapStatusError extends Error { constructor(status) { super('HAP failure'); this.hapStatus = status; } }
+    const accessory = {api: {hap: {HapStatusError, HAPStatus: {SERVICE_COMMUNICATION_FAILURE: -70402}}},
+        log: {warn() {}}, accessory: {displayName: 'test'}};
+    await assert.rejects(Accessory.prototype.writeDevice.call(accessory, async () => { throw new Error('rate limited'); }),
+        error => error instanceof HapStatusError && error.hapStatus === -70402);
 });
 
 test('invalid configuration logs field names but never configured credential values', () => {

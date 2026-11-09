@@ -28,4 +28,13 @@ export abstract class Accessory<T> {
         if (result === undefined || result === null) return null;
         return result;
     }
+
+    protected async writeDevice(action: () => Promise<void>): Promise<void> {
+        try {
+            await action();
+        } catch (error: any) {
+            this.log.warn(`Device change rejected: ${error?.message ?? 'request failed'}`, this.accessory.displayName);
+            throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+        }
+    }
 }

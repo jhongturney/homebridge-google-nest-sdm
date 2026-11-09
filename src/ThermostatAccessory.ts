@@ -308,7 +308,7 @@ export class ThermostatAccessory extends Accessory<Thermostat> {
                 break;
         }
 
-        await this.device.setMode(mode);
+        await this.writeDevice(() => this.device.setMode(mode));
     }
 
     /**
@@ -345,7 +345,7 @@ export class ThermostatAccessory extends Accessory<Thermostat> {
         if (!_.isNumber(value))
             throw new Error(`Cannot set "${value}" as temperature.`);
 
-        await this.device.setTargetTemperature(value);
+        await this.writeDevice(() => this.device.setTargetTemperature(value as number));
     }
 
     /**
@@ -377,7 +377,7 @@ export class ThermostatAccessory extends Accessory<Thermostat> {
         if (!_.isNumber(value))
             throw new Error(`Cannot set "${value}" as cooling threshold temperature.`);
 
-        await this.device.setTargetTemperatureRange(value, undefined);
+        await this.writeDevice(() => this.device.setTargetTemperatureRange(value as number, undefined));
     }
 
     /**
@@ -409,7 +409,7 @@ export class ThermostatAccessory extends Accessory<Thermostat> {
         if (!_.isNumber(value))
             throw new Error(`Cannot set "${value}" as heating threshold temperature.`);
 
-        await this.device.setTargetTemperatureRange(undefined, value);
+        await this.writeDevice(() => this.device.setTargetTemperatureRange(undefined, value as number));
     }
 
     /**
@@ -433,6 +433,6 @@ export class ThermostatAccessory extends Accessory<Thermostat> {
      */
     private async handleEcoModeSet(value:CharacteristicValue) {
         this.log.debug('Triggered SET EcoMode:' + value, this.accessory.displayName);
-        await this.device.setEco(value ? EcoModeType.MANUAL_ECO : EcoModeType.OFF);
+        await this.writeDevice(() => this.device.setEco(value ? EcoModeType.MANUAL_ECO : EcoModeType.OFF));
     }
 }

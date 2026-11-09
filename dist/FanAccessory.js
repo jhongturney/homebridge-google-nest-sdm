@@ -71,7 +71,7 @@ class FanAccessory extends Accessory_1.Accessory {
             throw new Error(`Cannot set "${value}" as fan state.`);
         if (this.config.fanDuration && (this.config.fanDuration < 1 || this.config.fanDuration > 43200))
             throw new Error(`Cannot set "${this.config.fanDuration}" as fan duration.`);
-        await this.device.setFan(value ? Traits.FanTimerModeType.ON : Traits_1.FanTimerModeType.OFF, this.config.fanDuration);
+        await this.writeDevice(() => this.device.setFan(value ? Traits.FanTimerModeType.ON : Traits.FanTimerModeType.OFF, this.config.fanDuration));
     }
     /**
      * Handle requests to get the current value of the "On" characteristic

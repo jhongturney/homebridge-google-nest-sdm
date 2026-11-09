@@ -9,6 +9,11 @@ import * as Events from './Events';
 export class Thermostat extends Device {
     protected commandErrorsAreFatal = true;
     private rangeUpdate: Promise<void> = Promise.resolve();
+    private pendingRange?: {
+        cool?: number;
+        heat?: number;
+        waiters: Array<{resolve: () => void; reject: (error: unknown) => void}>;
+    };
 
     getDisplayName(): string {
         return this.displayName ? this.displayName + ' Thermostat' : 'Unknown';
@@ -172,11 +177,29 @@ export class Thermostat extends Device {
     }
 
     setTargetTemperatureRange(cool?: number, heat?: number): Promise<void> {
-        // HomeKit writes the two thresholds separately. Serialize read/modify/write
-        // so the second write preserves the first accepted threshold.
-        const update = this.rangeUpdate.then(() => this.updateTargetTemperatureRange(cool, heat));
-        this.rangeUpdate = update.catch(() => {});
-        return update;
+        if (cool === undefined && heat === undefined)
+            return Promise.reject(new Error('At least one of heat/cool must be specified when setting a target temperature range.'));
+        if ((cool !== undefined && !Number.isFinite(cool)) || (heat !== undefined && !Number.isFinite(heat)))
+            return Promise.reject(new Error('Temperature thresholds must be finite numbers.'));
+
+        // Collect a short burst of HomeKit slider writes, keeping the newest value
+        // for each threshold. Use a fixed window so dragging cannot defer forever.
+        if (!this.pendingRange) {
+            this.pendingRange = {waiters: []};
+            setTimeout(() => {
+                const batch = this.pendingRange!;
+                this.pendingRange = undefined;
+                const update = this.rangeUpdate.then(() => this.updateTargetTemperatureRange(batch.cool, batch.heat));
+                this.rangeUpdate = update.catch(() => {});
+                void update.then(
+                    () => batch.waiters.forEach(waiter => waiter.resolve()),
+                    error => batch.waiters.forEach(waiter => waiter.reject(error))
+                );
+            }, 750);
+        }
+        if (cool !== undefined) this.pendingRange.cool = cool;
+        if (heat !== undefined) this.pendingRange.heat = heat;
+        return new Promise<void>((resolve, reject) => this.pendingRange!.waiters.push({resolve, reject}));
     }
 
     private async updateTargetTemperatureRange(cool?: number, heat?: number): Promise<void> {

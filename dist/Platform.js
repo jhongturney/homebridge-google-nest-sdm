@@ -24,12 +24,15 @@ class Platform {
         this.platformConfig = platformConfig;
         this.api = api;
         this.accessories = [];
+        this.stopped = false;
         this.debugMode = process.argv.includes('-D') || process.argv.includes('--debug');
         this.EcoMode = EcoMode(api);
         IEcoMode = this.EcoMode;
         this.config = platformConfig;
         if (!this.config || !this.config.projectId || !this.config.clientId || !this.config.clientSecret || !this.config.refreshToken || !this.config.subscriptionId) {
-            log.error(`${platformConfig.platform} is not configured correctly. The configuration provided was: ${JSON.stringify(this.config)}`);
+            const required = ['projectId', 'clientId', 'clientSecret', 'refreshToken', 'subscriptionId'];
+            const missing = required.filter(key => { var _a; return !((_a = this.config) === null || _a === void 0 ? void 0 : _a[key]); });
+            log.error(`Plugin configuration is incomplete. Missing required fields: ${missing.join(', ')}`);
             return;
         }
         this.smartDeviceManagement = new Api_1.SmartDeviceManagement(this.config, log);
@@ -44,6 +47,8 @@ class Platform {
         });
         this.api.on('shutdown', () => {
             var _a;
+            this.stopped = true;
+            clearTimeout(this.discoveryRetry);
             void ((_a = this.smartDeviceManagement) === null || _a === void 0 ? void 0 : _a.close());
         });
         this.Characteristic = Object.defineProperty(this.api.hap.Characteristic, 'EcoMode', { value: this.EcoMode });
@@ -66,7 +71,17 @@ class Platform {
         if (!this.smartDeviceManagement)
             return;
         const devices = await this.smartDeviceManagement.list_devices();
-        if (!devices)
+        if (!devices) {
+            if (!this.stopped && !this.discoveryRetry) {
+                this.discoveryRetry = setTimeout(() => {
+                    this.discoveryRetry = undefined;
+                    void this.discoverDevices();
+                }, 30000);
+                this.discoveryRetry.unref();
+            }
+            return;
+        }
+        if (this.stopped)
             return;
         const deviceInfos = devices
             .map(device => {

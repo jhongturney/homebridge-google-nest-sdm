@@ -36,6 +36,8 @@ export class Platform implements DynamicPlatformPlugin {
     private readonly accessories: PlatformAccessory[] = [];
     private readonly EcoMode;
     private readonly config: Config;
+    private discoveryRetry?: NodeJS.Timeout;
+    private stopped = false;
 
     constructor(
         public readonly log: Logger,
@@ -48,7 +50,9 @@ export class Platform implements DynamicPlatformPlugin {
 
         this.config = platformConfig as unknown as Config;
         if (!this.config || !this.config.projectId || !this.config.clientId || !this.config.clientSecret || !this.config.refreshToken || !this.config.subscriptionId) {
-            log.error(`${platformConfig.platform} is not configured correctly. The configuration provided was: ${JSON.stringify(this.config)}`)
+            const required = ['projectId', 'clientId', 'clientSecret', 'refreshToken', 'subscriptionId'] as const;
+            const missing = required.filter(key => !this.config?.[key]);
+            log.error(`Plugin configuration is incomplete. Missing required fields: ${missing.join(', ')}`);
             return;
         }
 
@@ -64,6 +68,8 @@ export class Platform implements DynamicPlatformPlugin {
         });
 
         this.api.on('shutdown', () => {
+            this.stopped = true;
+            clearTimeout(this.discoveryRetry);
             void this.smartDeviceManagement?.close();
         });
 
@@ -93,8 +99,17 @@ export class Platform implements DynamicPlatformPlugin {
 
         const devices = await this.smartDeviceManagement.list_devices();
 
-        if (!devices)
+        if (!devices) {
+            if (!this.stopped && !this.discoveryRetry) {
+                this.discoveryRetry = setTimeout(() => {
+                    this.discoveryRetry = undefined;
+                    void this.discoverDevices();
+                }, 30000);
+                this.discoveryRetry.unref();
+            }
             return;
+        }
+        if (this.stopped) return;
 
         const deviceInfos = devices
             .map(device => {

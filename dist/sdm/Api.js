@@ -49,7 +49,8 @@ const Display_1 = require("./Display");
 const PubSubAuth_1 = require("./PubSubAuth");
 class SmartDeviceManagement {
     constructor(config, log) {
-        this.subscribed = true;
+        this.config = config;
+        this.closed = false;
         this.log = log;
         this.oauth2Client = new google.Auth.OAuth2Client(config.clientId, config.clientSecret);
         this.projectId = config.projectId;
@@ -59,6 +60,12 @@ class SmartDeviceManagement {
         this.smartdevicemanagement = new google.smartdevicemanagement_v1.Smartdevicemanagement({
             auth: this.oauth2Client
         });
+        this.startSubscription();
+    }
+    startSubscription() {
+        if (this.closed)
+            return;
+        const config = this.config;
         try {
             this.pubSubClient = new pubsub.PubSub({
                 //use GCP project ID if it's present
@@ -68,9 +75,10 @@ class SmartDeviceManagement {
             this.subscription = this.pubSubClient.subscription(config.subscriptionId);
             this.subscription.on('message', message => {
                 var _a;
-                message.ack();
-                if (!this.devices)
+                if (!this.devices) {
+                    message.nack();
                     return;
+                }
                 this.log.debug('Event received: ' + message.data.toString());
                 // This callback runs asynchronously, long after the try/catch below
                 // has returned, so anything thrown here is an unhandled exception
@@ -105,18 +113,45 @@ class SmartDeviceManagement {
                 catch (error) {
                     this.log.error('Could not handle event: ', (_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : error);
                 }
+                finally {
+                    // Invalid/unsupported payloads must not become poison-message loops.
+                    message.ack();
+                }
             });
             this.subscription.on('error', error => {
                 this.log.error(`Plugin initialization failed, there was a failure with event subscription: ${(0, ApiError_1.describePubSubError)(error)}. Did you read the readme: https://github.com/potmat/homebridge-google-nest-sdm#where-do-the-config-values-come-from`);
-                this.subscribed = false;
+                this.scheduleSubscriptionRetry();
             });
         }
         catch (error) {
             this.log.error(`Plugin initialization failed, there was a failure with event subscription: ${(0, ApiError_1.describePubSubError)(error)}. Did you read the readme: https://github.com/potmat/homebridge-google-nest-sdm#where-do-the-config-values-come-from`);
-            this.subscribed = false;
+            this.scheduleSubscriptionRetry();
         }
     }
+    scheduleSubscriptionRetry() {
+        if (this.closed || this.retryTimer)
+            return;
+        this.retryTimer = setTimeout(async () => {
+            const subscription = this.subscription;
+            const client = this.pubSubClient;
+            this.subscription = undefined;
+            this.pubSubClient = undefined;
+            try {
+                await (subscription === null || subscription === void 0 ? void 0 : subscription.close());
+            }
+            catch ( /* already failed */_a) { /* already failed */ }
+            try {
+                await (client === null || client === void 0 ? void 0 : client.close());
+            }
+            catch ( /* already failed */_b) { /* already failed */ }
+            this.retryTimer = undefined;
+            this.startSubscription();
+        }, 30000);
+        this.retryTimer.unref();
+    }
     async close() {
+        this.closed = true;
+        clearTimeout(this.retryTimer);
         const subscription = this.subscription;
         const pubSubClient = this.pubSubClient;
         this.subscription = undefined;
@@ -135,8 +170,6 @@ class SmartDeviceManagement {
         }
     }
     async list_devices() {
-        if (!this.subscribed)
-            return this.devices;
         try {
             const response = await this.smartdevicemanagement.enterprises.devices.list({ parent: `enterprises/${this.projectId}` });
             this.log.debug('Receieved list of devices: ', response.data.devices);

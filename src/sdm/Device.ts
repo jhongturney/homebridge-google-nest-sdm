@@ -10,6 +10,9 @@ export abstract class Device {
     protected lastRefresh: number;
     protected displayName: string|null|undefined;
     protected log: Logger;
+    protected commandErrorsAreFatal = false;
+    private refreshPromise?: Promise<void>;
+    private lastRefreshAttempt = 0;
     constructor(smartdevicemanagement: google.smartdevicemanagement_v1.Smartdevicemanagement,
                 device: google.smartdevicemanagement_v1.Schema$GoogleHomeEnterpriseSdmV1Device,
                 log: Logger) {
@@ -37,7 +40,16 @@ export abstract class Device {
         return <string>this.device.name;
     }
 
-    async refresh() {
+    async refresh(): Promise<void> {
+        if (this.refreshPromise) return this.refreshPromise;
+        // Deduplicate concurrent characteristic reads and back off failed requests.
+        if (Date.now() - this.lastRefreshAttempt < 60000) return;
+        this.lastRefreshAttempt = Date.now();
+        this.refreshPromise = this.refreshDevice();
+        try { await this.refreshPromise; } finally { this.refreshPromise = undefined; }
+    }
+
+    private async refreshDevice(): Promise<void> {
         try {
             const response = await this.smartdevicemanagement.enterprises.devices.get({name: this.getName()});
             this.log.debug(`Request for device info for ${this.getDisplayName()} had value ${JSON.stringify(response.data)}`);
@@ -54,9 +66,8 @@ export abstract class Device {
 
     async getTrait<T>(name: string): Promise<T | null> {
         const howLongAgo: number = Date.now() - this.lastRefresh;
-        //Events will update traits as necessary
-        //no need to refresh more than once per day
-        if (howLongAgo > 1000 * 60 * 60 * 24) {
+        // Reconcile on reads even if the event connection silently stops delivering.
+        if (howLongAgo > 1000 * 60 * 5) {
             await this.refresh();
             this.log.debug(`Last refresh for ${this.getDisplayName()} was ${howLongAgo/1000}s, refreshing.`)
         }
@@ -84,6 +95,8 @@ export abstract class Device {
             } else {
                 this.log.error(`Could not execute device command: ${describeApiError(error)}`, this.getDisplayName());
             }
+            if (this.commandErrorsAreFatal)
+                throw new Error(`Device command failed: ${describeApiError(error)}`);
         }
 
         return undefined;

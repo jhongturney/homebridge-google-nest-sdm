@@ -1,6 +1,6 @@
 {
   "name": "homebridge-google-nest-sdm",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Jason Hong-Turney's fork of the Homebridge plugin for Google Nest Smart Device Management.",
   "main": "dist/index.js",
   "scripts": {

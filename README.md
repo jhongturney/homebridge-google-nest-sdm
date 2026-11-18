@@ -26,10 +26,10 @@ For an existing Homebridge Raspberry Pi installation, enter `hb-shell`, then run
 ```bash
 cd /var/lib/homebridge
 npm install --save-exact --ignore-scripts \
-  'https://github.com/jhongturney/homebridge-google-nest-sdm/releases/download/v2.0.0/homebridge-google-nest-sdm-2.0.0.tgz'
+  'https://github.com/jhongturney/homebridge-google-nest-sdm/releases/download/v2.0.1/homebridge-google-nest-sdm-2.0.1.tgz'
 ```
 
-Restart Homebridge through the UI. The startup log should report plugin version `2.0.0`.
+Restart Homebridge through the UI. The startup log should report plugin version `2.0.1`.
 
 `--ignore-scripts` follows the working update procedure for this existing installation. It skips the bundled ffmpeg installer; fresh camera installations must separately ensure a working ffmpeg binary is available. See the camera FAQ below.
 

@@ -51,6 +51,6 @@
     "copyfiles": "^2.4.1",
     "homebridge": "^2.5.0",
     "rimraf": "^6.1.4",
-    "typescript": "5.8.3"
+    "typescript": "7.0.2"
   }
 }

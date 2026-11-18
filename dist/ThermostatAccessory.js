@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -11,13 +15,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -30,7 +44,7 @@ const Accessory_1 = require("./Accessory");
 class ThermostatAccessory extends Accessory_1.Accessory {
     constructor(api, log, platform, accessory, device) {
         super(api, log, platform, accessory, device);
-        this.accessory.on("identify" /* IDENTIFY */, () => {
+        this.accessory.on("identify" /* PlatformAccessoryEvent.IDENTIFY */, () => {
             log.info("%s identified!", accessory.displayName);
         });
         // create a new Thermostat service
@@ -272,7 +286,7 @@ class ThermostatAccessory extends Accessory_1.Accessory {
                 mode = Traits.ThermostatModeType.HEATCOOL;
                 break;
         }
-        await this.device.setMode(mode);
+        await this.writeDevice(() => this.device.setMode(mode));
     }
     /**
      * Handle requests to get the current value of the "Current Temperature" characteristic
@@ -302,7 +316,7 @@ class ThermostatAccessory extends Accessory_1.Accessory {
         this.log.debug('Triggered SET TargetTemperature:' + value, this.accessory.displayName);
         if (!lodash_1.default.isNumber(value))
             throw new Error(`Cannot set "${value}" as temperature.`);
-        await this.device.setTargetTemperature(value);
+        await this.writeDevice(() => this.device.setTargetTemperature(value));
     }
     /**
      * Handle requests to get the current value of the "Cooling Threshold Temperature" characteristic
@@ -328,7 +342,7 @@ class ThermostatAccessory extends Accessory_1.Accessory {
         this.log.debug('Triggered SET CoolingThresholdTemperature:' + value, this.accessory.displayName);
         if (!lodash_1.default.isNumber(value))
             throw new Error(`Cannot set "${value}" as cooling threshold temperature.`);
-        await this.device.setTargetTemperatureRange(value, undefined);
+        await this.writeDevice(() => this.device.setTargetTemperatureRange(value, undefined));
     }
     /**
      * Handle requests to get the current value of the "Heating Threshold Temperature" characteristic
@@ -354,7 +368,7 @@ class ThermostatAccessory extends Accessory_1.Accessory {
         this.log.debug('Triggered SET HeatingThresholdTemperatureSet:' + value, this.accessory.displayName);
         if (!lodash_1.default.isNumber(value))
             throw new Error(`Cannot set "${value}" as heating threshold temperature.`);
-        await this.device.setTargetTemperatureRange(undefined, value);
+        await this.writeDevice(() => this.device.setTargetTemperatureRange(undefined, value));
     }
     /**
      * Handle requests to get the current value of the "Temperature Display Units" characteristic
@@ -375,7 +389,7 @@ class ThermostatAccessory extends Accessory_1.Accessory {
      */
     async handleEcoModeSet(value) {
         this.log.debug('Triggered SET EcoMode:' + value, this.accessory.displayName);
-        await this.device.setEco(value ? Traits_1.EcoModeType.MANUAL_ECO : Traits_1.EcoModeType.OFF);
+        await this.writeDevice(() => this.device.setEco(value ? Traits_1.EcoModeType.MANUAL_ECO : Traits_1.EcoModeType.OFF));
     }
 }
 exports.ThermostatAccessory = ThermostatAccessory;

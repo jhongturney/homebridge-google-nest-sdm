@@ -1,7 +1,11 @@
-[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+[![CI](https://github.com/jhongturney/homebridge-google-nest-sdm/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jhongturney/homebridge-google-nest-sdm/actions/workflows/ci.yml)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?business=EVN8JACZRMPTJ&no_recurring=1&currency_code=CAD)
 
 # homebridge-google-nest-sdm
+
+This is [jhongturney's maintained fork](https://github.com/jhongturney/homebridge-google-nest-sdm) of [potmat's original plugin](https://github.com/potmat/homebridge-google-nest-sdm). Stable fork releases are built from `master` and distributed as GitHub release assets. The npm package name and Homebridge configuration identifiers are retained for existing installations; installing the name from npm installs the upstream package instead.
+
+The fork supports Homebridge 1/2 and Node 22.12+, 24, and 26. Thermostat updates, mixed heat/cool targets, and fan control have been field-tested on Homebridge 2 and Node 24. Camera streaming and HKSV have not been field-tested in this fork. `werift` and `pick-port` upgrades remain deferred pending camera testing.
 
 A Homebridge plugin for Google Nest devices that uses the [Google Smart Device Management API](https://developers.google.com/nest/device-access). Supports Cameras, Doorbells, Displays, and Thermostats.  Supports HomeKit Secure Video (please read the section on HKSV below).
 
@@ -15,9 +19,19 @@ This package is not affiliated with, provided, endorsed, or supported by Google 
 
 # Installation
 
-``npm install -g --unsafe-perm homebridge-google-nest-sdm``
+For an existing Homebridge Raspberry Pi installation, enter `hb-shell`, then run:
 
-Don't forget the ``--unsafe-perm`` part!
+```bash
+cd /var/lib/homebridge
+npm install --save-exact --ignore-scripts \
+  'https://github.com/jhongturney/homebridge-google-nest-sdm/releases/download/v1.1.28/homebridge-google-nest-sdm-1.1.28.tgz'
+```
+
+Restart Homebridge through the UI. The startup log should report plugin version `1.1.28`.
+
+`--ignore-scripts` follows the working update procedure for this existing installation. It skips the bundled ffmpeg installer; fresh camera installations must separately ensure a working ffmpeg binary is available. See the camera FAQ below.
+
+To roll back, install the desired earlier release asset from the [fork releases](https://github.com/jhongturney/homebridge-google-nest-sdm/releases) using the same command format and restart Homebridge.
 
 # Example Homebridge config:
 

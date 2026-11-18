@@ -10,7 +10,7 @@ const systeminformation_1 = require("systeminformation");
 const FfMpegProcess_1 = require("./FfMpegProcess");
 const NestStreamer_1 = require("./NestStreamer");
 const HksvStreamer_1 = __importDefault(require("./HksvStreamer"));
-const pick_port_1 = __importDefault(require("pick-port"));
+const pick_port_1 = require("pick-port");
 // H.264 is codec type 0 in both HAP-NodeJS generations. Keeping the value
 // local avoids a runtime dependency on the retired `hap-nodejs` package while
 // remaining compatible with Homebridge 1 and 2.
@@ -153,9 +153,9 @@ class StreamingDelegate {
             ip: ipv6 ? '::' : '0.0.0.0',
             reserveTimeout: 15
         };
-        const videoReturnPort = await (0, pick_port_1.default)(options);
+        const videoReturnPort = await (0, pick_port_1.pickPort)(options);
         const videoSSRC = this.hap.CameraController.generateSynchronisationSource();
-        const audioReturnPort = await (0, pick_port_1.default)(options);
+        const audioReturnPort = await (0, pick_port_1.pickPort)(options);
         const audioSSRC = this.hap.CameraController.generateSynchronisationSource();
         const currentAddress = await this.getIpAddress(ipv6);
         const sessionInfo = {

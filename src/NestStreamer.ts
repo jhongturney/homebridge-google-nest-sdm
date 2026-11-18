@@ -13,7 +13,7 @@ import {
 } from "werift";
 import * as Traits from "./sdm/Traits";
 import {Logger} from "homebridge";
-import pickPort, { pickPortOptions } from 'pick-port';
+import {pickPort} from 'pick-port';
 import {Config} from "./Config";
 import {containsKeyframe, buildFirFeedback} from "./H264";
 
@@ -191,7 +191,7 @@ export class WebRtcNestStreamer extends NestStreamer {
         this.pc.iceConnectionStateChange.subscribe((state) => this.mark(`iceConnectionState: ${state}`));
         this.pc.connectionStateChange.subscribe((state) => this.mark(`connectionState: ${state}`));
 
-        const options: pickPortOptions = {
+        const options: Parameters<typeof pickPort>[0] = {
           type: 'udp',
           ip: '0.0.0.0',
           reserveTimeout: 15

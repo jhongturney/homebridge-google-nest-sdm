@@ -10,6 +10,12 @@ updates:
       time: "09:00"
       timezone: America/Los_Angeles
     open-pull-requests-limit: 10
+    # Compile against the oldest supported Node API. Keep 22.x type updates,
+    # but change the major deliberately when the minimum supported Node rises.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
     assignees:
       - jhongturney
     commit-message:

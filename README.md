@@ -39,6 +39,8 @@ To roll back, install the desired earlier release asset from the [fork releases]
 
 Every PR runs the unit tests and a clean package installation on Node 22.12/24/26 with Homebridge 2. The release workflow reuses this same three-job matrix. The package check loads the installed plugin, verifies platform registration and checks bundled snapshot resources without using Google credentials. Camera streaming, HKSV, and live Google authentication still require device testing.
 
+Keep `@types/node` on the major version of the oldest supported Node runtime (currently 22). This helps prevent accidentally compiling against APIs unavailable on the minimum runtime. Dependabot may update 22.x types, but major type-package upgrades are ignored until the minimum supported Node major changes. Runtime compatibility is still checked separately on Node 22.12, 24, and 26.
+
 After reviewing and merging updates into `master`, open [Actions → Release](https://github.com/jhongturney/homebridge-google-nest-sdm/actions/workflows/release.yml), choose **Run workflow**, select **master**, and choose **patch**, **minor**, or **major**. Enable **dry-run** to validate without publishing.
 
 The workflow tests the candidate version across the compatibility matrix, updates the package/lockfile and this installation guide, builds and checks the archive, then pushes a version commit and tag together and publishes a GitHub release with generated notes. Its run summary includes the exact `hb-shell` install command. It does not publish to npm or merge dependency PRs automatically. The workflow uses GitHub's built-in token; no npm token or personal access token is needed.

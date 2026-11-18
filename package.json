@@ -41,7 +41,7 @@
     "google-auth-library": "^11.3.4",
     "googleapis": "^190.0.0",
     "lodash": "^4.18.1",
-    "pick-port": "^1.0.1",
+    "pick-port": "^2.2.1",
     "systeminformation": "^5.33.22",
     "werift": "0.18.7"
   },

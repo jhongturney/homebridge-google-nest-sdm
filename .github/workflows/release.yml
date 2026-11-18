@@ -1,0 +1,147 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version increment
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      dry-run:
+        description: Validate and build without pushing a version, tag, or release
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stable-release
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require master
+        run: test "$GITHUB_REF" = refs/heads/master
+
+  validate:
+    needs: guard
+    uses: ./.github/workflows/ci.yml
+    with:
+      release-bump: ${{ inputs.bump }}
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      SOURCE_SHA: ${{ github.sha }}
+      BUMP: ${{ inputs.bump }}
+      DRY_RUN: ${{ inputs.dry-run }}
+    steps:
+      - name: Check out validated commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare version and installation documentation
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$BUMP" in patch|minor|major) ;; *) exit 1 ;; esac
+          OLD_VERSION=$(node -p "require('./package.json').version")
+          npm version "$BUMP" --no-git-tag-version --ignore-scripts
+          VERSION=$(node -p "require('./package.json').version")
+          export OLD_VERSION VERSION
+          node scripts/update-release-readme.cjs
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test versioned release
+        run: npm test
+
+      - name: Pack and verify exact release archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          npm pack --pack-destination release-assets
+          VERSION=$(node -p "require('./package.json').version")
+          node scripts/package-smoke.cjs 2.5.0 "release-assets/homebridge-google-nest-sdm-$VERSION.tgz"
+          git diff --check
+
+      - name: Commit version and atomically push master and tag
+        if: ${{ !inputs.dry-run }}
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin master
+          test "$(git rev-parse origin/master)" = "$SOURCE_SHA" || {
+            echo "master changed during validation. Start a fresh release run."
+            exit 1
+          }
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json README.md dist
+          git commit -m "Release $TAG"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push --atomic origin HEAD:refs/heads/master "refs/tags/$TAG"
+
+      - name: Publish GitHub release with archive and generated notes
+        if: ${{ !inputs.dry-run }}
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" "release-assets/homebridge-google-nest-sdm-$VERSION.tgz" \
+            --verify-tag --draft --generate-notes --title "$TAG"
+          gh release edit "$TAG" --draft=false --latest
+
+      - name: Write run summary
+        if: success()
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          {
+            echo "## Release $TAG"
+            echo "Dry run: $DRY_RUN"
+            echo 'All compatibility, unit, and packaged-install checks passed.'
+            if [ "$DRY_RUN" = false ]; then
+              echo "Release: https://github.com/$GH_REPO/releases/tag/$TAG"
+              echo 'Enter hb-shell, then run:'
+              echo '```bash'
+              echo 'cd /var/lib/homebridge'
+              echo "npm install --save-exact --ignore-scripts 'https://github.com/$GH_REPO/releases/download/$TAG/homebridge-google-nest-sdm-$VERSION.tgz'"
+              echo '```'
+              echo 'Restart Homebridge through the UI.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

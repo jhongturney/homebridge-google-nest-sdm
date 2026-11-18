@@ -17,7 +17,8 @@ exports.describePubSubError = describePubSubError;
  * RESOURCE_EXHAUSTED). Works for both GaxiosError and axios error shapes.
  */
 function isRateLimited(error) {
-    var _a, _b, _c, _d;
+    var _a;
+    var _b, _c, _d;
     const status = (_b = (_a = error === null || error === void 0 ? void 0 : error.response) === null || _a === void 0 ? void 0 : _a.status) !== null && _b !== void 0 ? _b : error === null || error === void 0 ? void 0 : error.code;
     if (status === 429 || status === '429')
         return true;
@@ -33,7 +34,8 @@ function isRateLimited(error) {
  * as a belt-and-braces guard against an unexpectedly large field.
  */
 function describeApiError(error) {
-    var _a, _b, _c;
+    var _a;
+    var _b, _c;
     const status = (_b = (_a = error === null || error === void 0 ? void 0 : error.response) === null || _a === void 0 ? void 0 : _a.status) !== null && _b !== void 0 ? _b : error === null || error === void 0 ? void 0 : error.code;
     const message = (_c = apiMessage(error)) !== null && _c !== void 0 ? _c : error === null || error === void 0 ? void 0 : error.message;
     const parts = [];
@@ -80,7 +82,8 @@ function describePubSubError(error) {
 // the REST error envelope ({error:{message}}) or the errors[] array. Returns
 // undefined when neither is present so callers can fall back to error.message.
 function apiMessage(error) {
-    var _a, _b, _c, _d, _e, _f, _g;
-    return (_g = (_d = (_c = (_b = (_a = error === null || error === void 0 ? void 0 : error.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.error) === null || _c === void 0 ? void 0 : _c.message) !== null && _d !== void 0 ? _d : (_f = (_e = error === null || error === void 0 ? void 0 : error.errors) === null || _e === void 0 ? void 0 : _e[0]) === null || _f === void 0 ? void 0 : _f.message) !== null && _g !== void 0 ? _g : undefined;
+    var _a, _b, _c, _d, _e;
+    var _f, _g;
+    return (_g = (_f = (_c = (_b = (_a = error === null || error === void 0 ? void 0 : error.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.error) === null || _c === void 0 ? void 0 : _c.message) !== null && _f !== void 0 ? _f : (_e = (_d = error === null || error === void 0 ? void 0 : error.errors) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.message) !== null && _g !== void 0 ? _g : undefined;
 }
 //# sourceMappingURL=ApiError.js.map

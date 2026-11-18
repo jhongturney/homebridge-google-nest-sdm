@@ -5,7 +5,9 @@
 
 This is [jhongturney's maintained fork](https://github.com/jhongturney/homebridge-google-nest-sdm) of [potmat's original plugin](https://github.com/potmat/homebridge-google-nest-sdm). Stable fork releases are built from `master` and distributed as GitHub release assets. The npm package name and Homebridge configuration identifiers are retained for existing installations; installing the name from npm installs the upstream package instead.
 
-The fork supports Homebridge 1/2 and Node 22.12+, 24, and 26. Thermostat updates, mixed heat/cool targets, and fan control have been field-tested on Homebridge 2 and Node 24. Camera streaming and HKSV have not been field-tested in this fork. `werift` and `pick-port` upgrades remain deferred pending camera testing.
+Starting with version 2.0.0, the fork supports **Homebridge 2 only**. Node 22.12+, 24, and 26 remain supported. Homebridge 1 users should stay on [v1.1.28](https://github.com/jhongturney/homebridge-google-nest-sdm/releases/tag/v1.1.28), the last release supporting Homebridge 1; new updates require Homebridge 2.
+
+Thermostat updates, mixed heat/cool targets, and fan control have been field-tested on Homebridge 2 and Node 24. Camera streaming and HKSV have not been field-tested in this fork. `werift` and `pick-port` upgrades remain deferred pending camera testing.
 
 A Homebridge plugin for Google Nest devices that uses the [Google Smart Device Management API](https://developers.google.com/nest/device-access). Supports Cameras, Doorbells, Displays, and Thermostats.  Supports HomeKit Secure Video (please read the section on HKSV below).
 
@@ -35,7 +37,7 @@ To roll back, install the desired earlier release asset from the [fork releases]
 
 # Maintaining and releasing this fork
 
-Every PR runs the unit tests and a clean package installation on Node 22.12/24/26 with Homebridge 1/2. The package check loads the installed plugin, verifies platform registration and checks bundled snapshot resources without using Google credentials. Camera streaming, HKSV, and live Google authentication still require device testing.
+Every PR runs the unit tests and a clean package installation on Node 22.12/24/26 with Homebridge 2. The release workflow reuses this same three-job matrix. The package check loads the installed plugin, verifies platform registration and checks bundled snapshot resources without using Google credentials. Camera streaming, HKSV, and live Google authentication still require device testing.
 
 After reviewing and merging updates into `master`, open [Actions → Release](https://github.com/jhongturney/homebridge-google-nest-sdm/actions/workflows/release.yml), choose **Run workflow**, select **master**, and choose **patch**, **minor**, or **major**. Enable **dry-run** to validate without publishing.
 

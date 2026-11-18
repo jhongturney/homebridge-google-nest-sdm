@@ -12,7 +12,7 @@
     "test:package": "node scripts/package-smoke.cjs"
   },
   "engines": {
-    "homebridge": "^1.6.0 || ^2.0.0",
+    "homebridge": "^2.0.0",
     "node": "^22.12.0 || ^24.0.0 || ^26.0.0"
   },
   "funding": {

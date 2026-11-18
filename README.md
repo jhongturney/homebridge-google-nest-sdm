@@ -5,7 +5,9 @@
 
 This is [jhongturney's maintained fork](https://github.com/jhongturney/homebridge-google-nest-sdm) of [potmat's original plugin](https://github.com/potmat/homebridge-google-nest-sdm). Stable fork releases are built from `master` and distributed as GitHub release assets. The npm package name and Homebridge configuration identifiers are retained for existing installations; installing the name from npm installs the upstream package instead.
 
-The fork supports Homebridge 1/2 and Node 22.12+, 24, and 26. Thermostat updates, mixed heat/cool targets, and fan control have been field-tested on Homebridge 2 and Node 24. Camera streaming and HKSV have not been field-tested in this fork. `werift` and `pick-port` upgrades remain deferred pending camera testing.
+Starting with version 2.0.0, the fork supports **Homebridge 2 only**. Node 22.12+, 24, and 26 remain supported. Homebridge 1 users should stay on [v1.1.28](https://github.com/jhongturney/homebridge-google-nest-sdm/releases/tag/v1.1.28), the last release supporting Homebridge 1; new updates require Homebridge 2.
+
+Thermostat updates, mixed heat/cool targets, and fan control have been field-tested on Homebridge 2 and Node 24. Camera streaming and HKSV have not been field-tested in this fork. `werift` and `pick-port` upgrades remain deferred pending camera testing.
 
 A Homebridge plugin for Google Nest devices that uses the [Google Smart Device Management API](https://developers.google.com/nest/device-access). Supports Cameras, Doorbells, Displays, and Thermostats.  Supports HomeKit Secure Video (please read the section on HKSV below).
 
@@ -24,14 +26,31 @@ For an existing Homebridge Raspberry Pi installation, enter `hb-shell`, then run
 ```bash
 cd /var/lib/homebridge
 npm install --save-exact --ignore-scripts \
-  'https://github.com/jhongturney/homebridge-google-nest-sdm/releases/download/v1.1.28/homebridge-google-nest-sdm-1.1.28.tgz'
+  'https://github.com/jhongturney/homebridge-google-nest-sdm/releases/download/v2.0.0/homebridge-google-nest-sdm-2.0.0.tgz'
 ```
 
-Restart Homebridge through the UI. The startup log should report plugin version `1.1.28`.
+Restart Homebridge through the UI. The startup log should report plugin version `2.0.0`.
 
 `--ignore-scripts` follows the working update procedure for this existing installation. It skips the bundled ffmpeg installer; fresh camera installations must separately ensure a working ffmpeg binary is available. See the camera FAQ below.
 
 To roll back, install the desired earlier release asset from the [fork releases](https://github.com/jhongturney/homebridge-google-nest-sdm/releases) using the same command format and restart Homebridge.
+
+# Maintaining and releasing this fork
+
+Every PR runs the unit tests and a clean package installation on Node 22.12/24/26 with Homebridge 2. The release workflow reuses this same three-job matrix. The package check loads the installed plugin, verifies platform registration and checks bundled snapshot resources without using Google credentials. Camera streaming, HKSV, and live Google authentication still require device testing.
+
+After reviewing and merging updates into `master`, open [Actions → Release](https://github.com/jhongturney/homebridge-google-nest-sdm/actions/workflows/release.yml), choose **Run workflow**, select **master**, and choose **patch**, **minor**, or **major**. Enable **dry-run** to validate without publishing.
+
+The workflow tests the candidate version across the compatibility matrix, updates the package/lockfile and this installation guide, builds and checks the archive, then pushes a version commit and tag together and publishes a GitHub release with generated notes. Its run summary includes the exact `hb-shell` install command. It does not publish to npm or merge dependency PRs automatically. The workflow uses GitHub's built-in token; no npm token or personal access token is needed.
+
+If `master` changes during validation, the release stops; run it again against the new commit. Concurrent release runs are serialized. If publishing fails after the version/tag push, recover the existing tag's release rather than immediately requesting another version bump: check for a draft release, finish its asset upload if necessary, then publish it. The failed run's logs show the version and asset name.
+
+To run the package check locally after building:
+
+```bash
+npm test
+npm run test:package -- 2.5.0
+```
 
 # Example Homebridge config:
 

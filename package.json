@@ -1,6 +1,6 @@
 {
   "name": "homebridge-google-nest-sdm",
-  "version": "1.1.28",
+  "version": "2.0.0",
   "description": "Jason Hong-Turney's fork of the Homebridge plugin for Google Nest Smart Device Management.",
   "main": "dist/index.js",
   "scripts": {
@@ -8,10 +8,11 @@
     "copy-files": "copyfiles -u 1 src/res/*.* dist/",
     "build": "npm run clean && tsc && npm run copy-files",
     "prepublishOnly": "npm run build",
-    "test": "npm run build && node --test test/*.test.js"
+    "test": "npm run build && node --test test/*.test.js",
+    "test:package": "node scripts/package-smoke.cjs"
   },
   "engines": {
-    "homebridge": "^1.6.0 || ^2.0.0",
+    "homebridge": "^2.0.0",
     "node": "^22.12.0 || ^24.0.0 || ^26.0.0"
   },
   "funding": {

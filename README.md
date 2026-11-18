@@ -7,7 +7,7 @@ This is [jhongturney's maintained fork](https://github.com/jhongturney/homebridg
 
 Starting with version 2.0.0, the fork supports **Homebridge 2 only**. Node 22.12+, 24, and 26 remain supported. Homebridge 1 users should stay on [v1.1.28](https://github.com/jhongturney/homebridge-google-nest-sdm/releases/tag/v1.1.28), the last release supporting Homebridge 1; new updates require Homebridge 2.
 
-Thermostat updates, mixed heat/cool targets, and fan control have been field-tested on Homebridge 2 and Node 24. Camera streaming and HKSV have not been field-tested in this fork. `werift` and `pick-port` upgrades remain deferred pending camera testing.
+Thermostat updates, mixed heat/cool targets, and fan control have been field-tested on Homebridge 2 and Node 24. Camera streaming and HKSV have not been field-tested in this fork. The `pick-port` 2 migration is covered by real IPv4/IPv6 UDP allocation and compiled stream-setup tests; these do not validate a full camera stream. The `werift` upgrade remains deferred pending transport/camera testing.
 
 A Homebridge plugin for Google Nest devices that uses the [Google Smart Device Management API](https://developers.google.com/nest/device-access). Supports Cameras, Doorbells, Displays, and Thermostats.  Supports HomeKit Secure Video (please read the section on HKSV below).
 

@@ -47,7 +47,8 @@ updates:
           - patch
     # Major upgrades remain individual PRs. Camera dependencies are excluded
     # from groups, not ignored: their updates still get individual review PRs.
-    # In particular, werift and pick-port need camera testing before merging.
+    # Werift needs transport/camera testing. For pick-port, review API changes
+    # and run the UDP allocation/stream-setup regressions before merging.
 
   - package-ecosystem: github-actions
     directory: /

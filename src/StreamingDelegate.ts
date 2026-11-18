@@ -27,7 +27,7 @@ import {Camera} from "./sdm/Camera";
 import {getStreamer, NestStream, NestStreamer} from "./NestStreamer";
 import {Platform} from "./Platform";
 import HksvStreamer from "./HksvStreamer";
-import pickPort, { pickPortOptions } from 'pick-port';
+import {pickPort} from 'pick-port';
 
 // H.264 is codec type 0 in both HAP-NodeJS generations. Keeping the value
 // local avoids a runtime dependency on the retired `hap-nodejs` package while
@@ -234,7 +234,7 @@ export abstract class StreamingDelegate<T extends CameraController> implements C
 
     const ipv6 = request.addressVersion === 'ipv6';
 
-    const options: pickPortOptions = {
+    const options: Parameters<typeof pickPort>[0] = {
       type: 'udp',
       ip: ipv6 ? '::' : '0.0.0.0',
       reserveTimeout: 15

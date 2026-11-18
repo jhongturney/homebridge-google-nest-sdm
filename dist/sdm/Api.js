@@ -139,11 +139,11 @@ class SmartDeviceManagement {
             try {
                 await (subscription === null || subscription === void 0 ? void 0 : subscription.close());
             }
-            catch ( /* already failed */_a) { /* already failed */ }
+            catch (_a) { /* already failed */ }
             try {
                 await (client === null || client === void 0 ? void 0 : client.close());
             }
-            catch ( /* already failed */_b) { /* already failed */ }
+            catch (_b) { /* already failed */ }
             this.retryTimer = undefined;
             this.startSubscription();
         }, 30000);

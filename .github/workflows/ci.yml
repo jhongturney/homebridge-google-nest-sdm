@@ -3,6 +3,13 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_call:
+    inputs:
+      release-bump:
+        description: Optional version increment for release candidate testing
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -11,6 +18,7 @@ jobs:
   test:
     name: Node ${{ matrix.node-version }} / Homebridge ${{ matrix.homebridge-version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -38,5 +46,18 @@ jobs:
       - name: Select Homebridge version
         run: npm install --no-save --ignore-scripts "homebridge@${{ matrix.homebridge-version }}"
 
+      - name: Prepare release candidate version
+        if: ${{ inputs.release-bump != '' }}
+        env:
+          BUMP: ${{ inputs.release-bump }}
+        run: |
+          case "$BUMP" in patch|minor|major) ;; *) exit 1 ;; esac
+          npm version "$BUMP" --no-git-tag-version --ignore-scripts
+
       - name: Build and test
         run: npm test
+
+      - name: Test installable package and plugin registration
+        env:
+          HOMEBRIDGE_VERSION: ${{ matrix.homebridge-version }}
+        run: node scripts/package-smoke.cjs "$HOMEBRIDGE_VERSION"

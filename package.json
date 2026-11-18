@@ -8,7 +8,8 @@
     "copy-files": "copyfiles -u 1 src/res/*.* dist/",
     "build": "npm run clean && tsc && npm run copy-files",
     "prepublishOnly": "npm run build",
-    "test": "npm run build && node --test test/*.test.js"
+    "test": "npm run build && node --test test/*.test.js",
+    "test:package": "node scripts/package-smoke.cjs"
   },
   "engines": {
     "homebridge": "^1.6.0 || ^2.0.0",

@@ -33,6 +33,23 @@ Restart Homebridge through the UI. The startup log should report plugin version 
 
 To roll back, install the desired earlier release asset from the [fork releases](https://github.com/jhongturney/homebridge-google-nest-sdm/releases) using the same command format and restart Homebridge.
 
+# Maintaining and releasing this fork
+
+Every PR runs the unit tests and a clean package installation on Node 22.12/24/26 with Homebridge 1/2. The package check loads the installed plugin, verifies platform registration and checks bundled snapshot resources without using Google credentials. Camera streaming, HKSV, and live Google authentication still require device testing.
+
+After reviewing and merging updates into `master`, open [Actions → Release](https://github.com/jhongturney/homebridge-google-nest-sdm/actions/workflows/release.yml), choose **Run workflow**, select **master**, and choose **patch**, **minor**, or **major**. Enable **dry-run** to validate without publishing.
+
+The workflow tests the candidate version across the compatibility matrix, updates the package/lockfile and this installation guide, builds and checks the archive, then pushes a version commit and tag together and publishes a GitHub release with generated notes. Its run summary includes the exact `hb-shell` install command. It does not publish to npm or merge dependency PRs automatically. The workflow uses GitHub's built-in token; no npm token or personal access token is needed.
+
+If `master` changes during validation, the release stops; run it again against the new commit. Concurrent release runs are serialized. If publishing fails after the version/tag push, recover the existing tag's release rather than immediately requesting another version bump: check for a draft release, finish its asset upload if necessary, then publish it. The failed run's logs show the version and asset name.
+
+To run the package check locally after building:
+
+```bash
+npm test
+npm run test:package -- 2.5.0
+```
+
 # Example Homebridge config:
 
     {

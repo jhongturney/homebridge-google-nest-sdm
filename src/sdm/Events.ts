@@ -33,9 +33,9 @@ export interface ResourceUpdate {
 export interface ResourceEventUpdate extends ResourceUpdate {
     events: {
         [Constants.CameraMotion]?: CameraMotion;
-        [Constants.CameraMotion]?: CameraPerson;
-        [Constants.CameraMotion]?: CameraSound;
-        [Constants.CameraMotion]?: DoorbellChime;
+        [Constants.CameraPerson]?: CameraPerson;
+        [Constants.CameraSound]?: CameraSound;
+        [Constants.DoorbellChime]?: DoorbellChime;
     }
 }
 
